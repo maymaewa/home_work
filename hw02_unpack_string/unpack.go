@@ -21,7 +21,7 @@ func Unpack(s string) (string, error) {
 		}
 
 		count := 1
-		next := i+1
+		next := i + 1
 
 		if next < length && unicode.IsDigit(runes[next]) {
 			count = int(runes[next] - '0')
