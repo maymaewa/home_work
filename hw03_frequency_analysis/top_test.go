@@ -79,4 +79,32 @@ func TestTop10(t *testing.T) {
 			require.Equal(t, expected, Top10(text))
 		}
 	})
+
+	t.Run("less than ten unique words", func(t *testing.T) {
+		expected := []string{"c", "a", "b"}
+
+		require.Equal(t, expected, Top10("a b c c"))
+	})
+
+	t.Run("sort by frequency", func(t *testing.T) {
+		expected := []string{"a", "b", "c"}
+
+		require.Equal(t, expected, Top10("a a a b b c"))
+	})
+
+	t.Run("sort lexicographically when frequencies equal", func(t *testing.T) {
+		expected := []string{"a", "b", "c"}
+
+		require.Equal(t, expected, Top10("c b a"))
+	})
+
+	t.Run("punctuation is part of word", func(t *testing.T) {
+		expected := []string{
+			"cat",
+			"cat!",
+			"cat,",
+		}
+
+		require.Equal(t, expected, Top10("cat, cat! cat"))
+	})
 }
