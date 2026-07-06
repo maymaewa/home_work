@@ -50,7 +50,80 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(2)
+
+		require.False(t, c.Set("a", 1))
+		require.False(t, c.Set("b", 2))
+
+		v, ok := c.Get("a")
+		require.True(t, ok)
+		require.Equal(t, 1, v)
+
+		require.False(t, c.Set("c", 3))
+
+		_, ok = c.Get("b")
+		require.False(t, ok)
+
+		v, ok = c.Get("a")
+		require.True(t, ok)
+		require.Equal(t, 1, v)
+
+		v, ok = c.Get("c")
+		require.True(t, ok)
+		require.Equal(t, 3, v)
+	})
+
+	t.Run("clear", func(t *testing.T) {
+		c := NewCache(2)
+
+		c.Set("a", 1)
+		c.Set("b", 2)
+
+		c.Clear()
+
+		_, ok := c.Get("a")
+		require.False(t, ok)
+
+		_, ok = c.Get("b")
+		require.False(t, ok)
+
+		require.False(t, c.Set("c", 3))
+
+		v, ok := c.Get("c")
+		require.True(t, ok)
+		require.Equal(t, 3, v)
+	})
+
+	t.Run("zero capacity", func(t *testing.T) {
+		c := NewCache(0)
+
+		require.False(t, c.Set("a", 1))
+
+		v, ok := c.Get("a")
+		require.False(t, ok)
+		require.Nil(t, v)
+	})
+
+	t.Run("get refreshes item", func(t *testing.T) {
+		c := NewCache(2)
+
+		c.Set("a", 1)
+		c.Set("b", 2)
+
+		// "a" становится самым новым
+		_, ok := c.Get("a")
+		require.True(t, ok)
+
+		c.Set("c", 3)
+
+		_, ok = c.Get("b")
+		require.False(t, ok)
+
+		_, ok = c.Get("a")
+		require.True(t, ok)
+
+		_, ok = c.Get("c")
+		require.True(t, ok)
 	})
 }
 
