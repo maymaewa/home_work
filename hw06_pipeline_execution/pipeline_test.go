@@ -145,6 +145,102 @@ func TestAllStageStop(t *testing.T) {
 		wg.Wait()
 
 		require.Len(t, result, 0)
-
 	})
+}
+
+func TestExecutePipeline_NoStages(t *testing.T) {
+	in := make(Bi)
+
+	go func() {
+		defer close(in)
+
+		in <- 1
+		in <- 2
+		in <- 3
+	}()
+
+	var result []int
+
+	for v := range ExecutePipeline(in, nil) {
+		result = append(result, v.(int))
+	}
+
+	require.Equal(t, []int{1, 2, 3}, result)
+}
+
+func TestExecutePipeline_EmptyInput(t *testing.T) {
+	in := make(Bi)
+	close(in)
+
+	out := ExecutePipeline(in, nil)
+
+	_, ok := <-out
+	require.False(t, ok)
+}
+
+func TestExecutePipeline_OneStage(t *testing.T) {
+	stage := func(in In) Out {
+		out := make(Bi)
+
+		go func() {
+			defer close(out)
+
+			for v := range in {
+				out <- v.(int) * 10
+			}
+		}()
+
+		return out
+	}
+
+	in := make(Bi)
+
+	go func() {
+		defer close(in)
+
+		in <- 1
+		in <- 2
+	}()
+
+	var result []int
+
+	for v := range ExecutePipeline(in, nil, stage) {
+		result = append(result, v.(int))
+	}
+
+	require.Equal(t, []int{10, 20}, result)
+}
+
+func TestExecutePipeline_Order(t *testing.T) {
+	stage := func(in In) Out {
+		out := make(Bi)
+
+		go func() {
+			defer close(out)
+
+			for v := range in {
+				out <- v
+			}
+		}()
+
+		return out
+	}
+
+	in := make(Bi)
+
+	go func() {
+		defer close(in)
+
+		for i := 0; i < 100; i++ {
+			in <- i
+		}
+	}()
+
+	i := 0
+	for v := range ExecutePipeline(in, nil, stage, stage, stage) {
+		require.Equal(t, i, v)
+		i++
+	}
+
+	require.Equal(t, 100, i)
 }
