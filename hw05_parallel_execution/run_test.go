@@ -67,4 +67,93 @@ func TestRun(t *testing.T) {
 		require.Equal(t, int32(tasksCount), runTasksCount, "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
+
+	t.Run("ignore errors when m <= 0", func(t *testing.T) {
+		const tasksCount = 20
+
+		var runTasksCount int32
+
+		tasks := make([]Task, 0, tasksCount)
+
+		for i := 0; i < tasksCount; i++ {
+			tasks = append(tasks, func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				return errors.New("boom")
+			})
+		}
+
+		err := Run(tasks, 4, 0)
+
+		require.NoError(t, err)
+		require.Equal(t, int32(tasksCount), runTasksCount)
+	})
+
+	t.Run("errors less than limit", func(t *testing.T) {
+		var runTasksCount int32
+
+		tasks := []Task{
+			func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				return errors.New("err")
+			},
+			func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				return nil
+			},
+			func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				return nil
+			},
+		}
+
+		err := Run(tasks, 2, 2)
+
+		require.NoError(t, err)
+		require.Equal(t, int32(3), runTasksCount)
+	})
+
+	t.Run("empty tasks", func(t *testing.T) {
+		err := Run(nil, 5, 1)
+
+		require.NoError(t, err)
+	})
+
+	t.Run("workers more than tasks", func(t *testing.T) {
+		var runTasksCount int32
+
+		tasks := []Task{
+			func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				return nil
+			},
+			func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				return nil
+			},
+		}
+
+		err := Run(tasks, 10, 1)
+
+		require.NoError(t, err)
+		require.Equal(t, int32(2), runTasksCount)
+	})
+
+	t.Run("stop taking new tasks after errors limit", func(t *testing.T) {
+		var started int32
+
+		tasks := make([]Task, 100)
+
+		for i := range tasks {
+			tasks[i] = func() error {
+				atomic.AddInt32(&started, 1)
+				time.Sleep(20 * time.Millisecond)
+				return errors.New("boom")
+			}
+		}
+
+		err := Run(tasks, 5, 3)
+
+		require.ErrorIs(t, err, ErrErrorsLimitExceeded)
+		require.LessOrEqual(t, started, int32(8))
+	})
 }
