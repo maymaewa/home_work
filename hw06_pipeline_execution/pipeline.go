@@ -22,7 +22,12 @@ func orDone(done In, in In) Out {
 	out := make(Bi)
 
 	go func() {
-		defer close(out)
+		defer func() {
+			close(out)
+			for v := range in {
+				_ = v
+			}
+		}()
 
 		for {
 			select {
