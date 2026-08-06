@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,6 +37,7 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		envList = append(envList, k+"="+v)
 	}
 
+	// #nosec G204 -- command is provided intentionally by the caller.
 	command := exec.Command(cmd[0], cmd[1:]...)
 	command.Env = envList
 
@@ -48,7 +50,8 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		return 0
 	}
 
-	if exitErr, ok := err.(*exec.ExitError); ok {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
 		return exitErr.ExitCode()
 	}
 

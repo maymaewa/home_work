@@ -31,7 +31,7 @@ func ReadDir(dir string) (Environment, error) {
 		name := entry.Name()
 
 		if strings.Contains(name, "=") {
-			return nil, fmt.Errorf("Неверное название переменной: %s", name)
+			return nil, fmt.Errorf("неверное название переменной: %s", name)
 		}
 
 		data, err := os.ReadFile(filepath.Join(dir, name))

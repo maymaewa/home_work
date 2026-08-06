@@ -26,36 +26,36 @@ func TestReadDir(t *testing.T) {
 	})
 
 	t.Run("EMPTY", func(t *testing.T) {
-    	v, ok := env["EMPTY"]
-    	if !ok {
-        	t.Fatal("EMPTY not found")
-    	}
+		v, ok := env["EMPTY"]
+		if !ok {
+			t.Fatal("EMPTY not found")
+		}
 
-    	if v.NeedRemove {
-        	t.Fatal("EMPTY should not be marked for removal")
-    	}
+		if v.NeedRemove {
+			t.Fatal("EMPTY should not be marked for removal")
+		}
 
-    	if v.Value != "" {
-        	t.Fatalf("expected empty string, got %q", v.Value)
-    	}
+		if v.Value != "" {
+			t.Fatalf("expected empty string, got %q", v.Value)
+		}
 	})
 
 	t.Run("FOO", func(t *testing.T) {
-	v, ok := env["FOO"]
-	if !ok {
-		t.Fatal("FOO not found")
-	}
+		v, ok := env["FOO"]
+		if !ok {
+			t.Fatal("FOO not found")
+		}
 
-	if v.NeedRemove {
-		t.Fatal("FOO should not be removed")
-	}
+		if v.NeedRemove {
+			t.Fatal("FOO should not be removed")
+		}
 
-	expected := "   foo\nwith new line"
+		expected := "   foo\nwith new line"
 
-	if v.Value != expected {
-		t.Fatalf("expected %q, got %q", expected, v.Value)
-	}
-})
+		if v.Value != expected {
+			t.Fatalf("expected %q, got %q", expected, v.Value)
+		}
+	})
 
 	t.Run("UNSET", func(t *testing.T) {
 		v, ok := env["UNSET"]
