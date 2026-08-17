@@ -12,11 +12,11 @@ type (
 	User struct {
 		ID     string `json:"id" validate:"len:36"`
 		Name   string
-		Age    int             `validate:"min:18|max:50"`
-		Email  string          `validate:"regexp:^\\w+@\\w+\\.\\w+$"`
-		Role   UserRole        `validate:"in:admin,stuff"`
-		Phones []string        `validate:"len:11"`
-		meta   json.RawMessage //nolint:unused
+		Age    int      `validate:"min:18|max:50"`
+		Email  string   `validate:"regexp:^\\w+@\\w+\\.\\w+$"`
+		Role   UserRole `validate:"in:admin,stuff"`
+		Phones []string `validate:"len:11"`
+		meta   json.RawMessage
 	}
 
 	App struct {
@@ -46,7 +46,6 @@ func TestValidateValidUser(t *testing.T) {
 	}
 
 	err := Validate(user)
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
@@ -428,7 +427,6 @@ func TestValidateIgnoresFieldsWithoutTag(t *testing.T) {
 		Valid:   "hello",
 		Ignored: "this value can have any length",
 	})
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
@@ -444,7 +442,6 @@ func TestValidateIgnoresUnexportedFields(t *testing.T) {
 	}
 
 	err := Validate(user)
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
@@ -458,7 +455,6 @@ func TestValidateStructWithoutTags(t *testing.T) {
 	}
 
 	err := Validate(token)
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
