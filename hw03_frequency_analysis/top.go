@@ -23,6 +23,7 @@ func getFreqMap(text string) map[string]int {
 	words := strings.Fields(text)
 
 	freq := make(map[string]int)
+
 	for _, word := range words {
 		freq[word]++
 	}
@@ -32,6 +33,7 @@ func getFreqMap(text string) map[string]int {
 
 func getWordStat(freq map[string]int) []wordStat {
 	stats := make([]wordStat, 0, len(freq))
+	
 	for word, count := range freq {
 		stats = append(stats, wordStat{
 			word:  word,
