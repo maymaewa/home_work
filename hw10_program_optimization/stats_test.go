@@ -1,9 +1,11 @@
+//go:build !bench
 // +build !bench
 
 package hw10programoptimization
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -36,4 +38,31 @@ func TestGetDomainStat(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, DomainStat{}, result)
 	})
+}
+
+func TestGetDomainStat_CaseInsensitive(t *testing.T) {
+	data := `{"Id":1,"Email":"user@Example.BIZ"}
+			{"Id":2,"Email":"user2@example.biz"}
+			{"Id":3,"Email":"user3@other.com"}`
+
+	result, err := GetDomainStat(strings.NewReader(data), "biz")
+
+	require.NoError(t, err)
+	require.Equal(t, DomainStat{"example.biz": 2,}, result)
+}
+
+func TestGetDomainStat_InvalidJSON(t *testing.T) {
+	data := `{"Id":1,"Email":"user@example.com"}
+				invalid json`
+
+	_, err := GetDomainStat(strings.NewReader(data), "com")
+
+	require.Error(t, err)
+}
+
+func TestGetDomainStat_EmptyInput(t *testing.T) {
+	result, err := GetDomainStat(strings.NewReader(""), "com")
+
+	require.NoError(t, err)
+	require.Empty(t, result)
 }
