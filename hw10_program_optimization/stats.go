@@ -2,10 +2,11 @@ package hw10programoptimization
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 type User struct {
@@ -19,6 +20,8 @@ type User struct {
 }
 
 type DomainStat map[string]int
+
+var json = jsoniter.ConfigFastest
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	result := make(DomainStat)
