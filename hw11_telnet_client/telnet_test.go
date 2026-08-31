@@ -62,4 +62,56 @@ func TestTelnetClient(t *testing.T) {
 
 		wg.Wait()
 	})
+
+	t.Run("send returns EOF", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+		defer func() { require.NoError(t, l.Close()) }()
+
+		connCh := make(chan net.Conn)
+
+		go func() {
+			conn, err := l.Accept()
+			require.NoError(t, err)
+			connCh <- conn
+		}()
+
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		client := NewTelnetClient(
+			l.Addr().String(),
+			time.Second,
+			io.NopCloser(in),
+			out,
+		)
+
+		require.NoError(t, client.Connect())
+		defer func() { require.NoError(t, client.Close()) }()
+
+		in.WriteString("hello")
+
+		err = client.Send()
+		require.ErrorIs(t, err, io.EOF)
+
+		conn := <-connCh
+		defer func() { require.NoError(t, conn.Close()) }()
+
+		buf := make([]byte, 100)
+		n, err := conn.Read(buf)
+		require.NoError(t, err)
+		require.Equal(t, "hello", string(buf[:n]))
+	})
+
+	t.Run("connection refused", func(t *testing.T) {
+		client := NewTelnetClient(
+			"127.0.0.1:1",
+			100*time.Millisecond,
+			io.NopCloser(bytes.NewBuffer(nil)),
+			&bytes.Buffer{},
+		)
+
+		err := client.Connect()
+		require.Error(t, err)
+	})
 }
