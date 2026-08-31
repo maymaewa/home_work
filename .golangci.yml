@@ -17,6 +17,7 @@ linters-settings:
         allow:
           - $gostd
           - golang.org/x/example/hello/reverse
+          - github.com/json-iterator/go
       Test:
         files:
           - $test
