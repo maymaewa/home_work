@@ -76,7 +76,7 @@ func TestTelnetClient(t *testing.T) {
 			connCh <- conn
 		}()
 
-		in := &bytes.Buffer{}
+		in := bytes.NewBufferString("hello")
 		out := &bytes.Buffer{}
 
 		client := NewTelnetClient(
@@ -89,8 +89,11 @@ func TestTelnetClient(t *testing.T) {
 		require.NoError(t, client.Connect())
 		defer func() { require.NoError(t, client.Close()) }()
 
-		in.WriteString("hello")
+		// Первый вызов отправляет данные.
+		err = client.Send()
+		require.NoError(t, err)
 
+		// Второй вызов получает EOF от входного потока.
 		err = client.Send()
 		require.ErrorIs(t, err, io.EOF)
 
