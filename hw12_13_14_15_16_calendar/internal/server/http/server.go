@@ -60,10 +60,10 @@ func NewServer(logger Logger, app Application, config Config) *Server {
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	//nolint:gosec // shutdown uses a fresh context because the parent context is already canceled.
 	go func() {
 		<-ctx.Done()
 
-		//nolint:gosec // shutdown must use a fresh context because the parent context is already canceled.
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
