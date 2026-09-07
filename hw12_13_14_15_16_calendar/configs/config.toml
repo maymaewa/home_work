@@ -1,0 +1,16 @@
+[logger]
+level = "debug"
+
+[storage]
+type = "sql"
+
+[http]
+host = "127.0.0.1"
+port = 8080
+
+[storage.sql]
+host = "localhost"
+port = 5432
+database = "postgres"
+username = "postgres"
+password = "postgres"

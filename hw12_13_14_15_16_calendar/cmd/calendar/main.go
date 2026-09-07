@@ -3,15 +3,17 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/app"
+	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/server/http"
+	memorystorage "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -28,13 +30,59 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
+	config, err := NewConfig(configFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		os.Exit(1)
+	}
+
 	logg := logger.New(config.Logger.Level)
 
-	storage := memorystorage.New()
+	var storage app.Storage
+	var sqlStore *sqlstorage.Storage
+
+	switch config.Storage.Type {
+	case "memory":
+		storage = memorystorage.New()
+
+	case "sql":
+		sqlStore = sqlstorage.New(sqlstorage.Config{
+			Host:     config.Storage.SQL.Host,
+			Port:     config.Storage.SQL.Port,
+			Database: config.Storage.SQL.Database,
+			Username: config.Storage.SQL.Username,
+			Password: config.Storage.SQL.Password,
+		})
+
+		if err := sqlStore.Connect(context.Background()); err != nil {
+			logg.Error("failed to connect to database: " + err.Error())
+			os.Exit(1)
+		}
+
+		storage = sqlStore
+
+	default:
+		logg.Error("unknown storage type: " + config.Storage.Type)
+		os.Exit(1)
+	}
+
+	if sqlStore != nil {
+		defer func() {
+			if err := sqlStore.Close(context.Background()); err != nil {
+				logg.Error("failed to close database: " + err.Error())
+			}
+		}()
+	}
+
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(
+		logg,
+		calendar,
+		internalhttp.Config{
+			Host: config.HTTP.Host,
+			Port: config.HTTP.Port,
+		})
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
