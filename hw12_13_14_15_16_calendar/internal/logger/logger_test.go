@@ -36,32 +36,32 @@ func TestNew_Levels(t *testing.T) {
 		errorEnable bool
 	}{
 		{
-			name:        "debug",
-			level:       "debug",
+			name:        levelDebug,
+			level:       levelDebug,
 			debugEnable: true,
 			infoEnable:  true,
 			warnEnable:  true,
 			errorEnable: true,
 		},
 		{
-			name:        "info",
-			level:       "info",
+			name:        levelInfo,
+			level:       levelInfo,
 			debugEnable: false,
 			infoEnable:  true,
 			warnEnable:  true,
 			errorEnable: true,
 		},
 		{
-			name:        "warn",
-			level:       "warn",
+			name:        levelWarn,
+			level:       levelWarn,
 			debugEnable: false,
 			infoEnable:  false,
 			warnEnable:  true,
 			errorEnable: true,
 		},
 		{
-			name:        "error",
-			level:       "error",
+			name:        levelError,
+			level:       levelError,
 			debugEnable: false,
 			infoEnable:  false,
 			warnEnable:  false,
@@ -108,32 +108,32 @@ func TestLogger_Levels(t *testing.T) {
 		want        string
 	}{
 		{
-			name:        "debug",
-			configLevel: "debug",
+			name:        levelDebug,
+			configLevel: levelDebug,
 			log: func(logger *Logger) {
 				logger.Debug("debug message")
 			},
 			want: "debug message",
 		},
 		{
-			name:        "info",
-			configLevel: "info",
+			name:        levelInfo,
+			configLevel: levelInfo,
 			log: func(logger *Logger) {
 				logger.Info("info message")
 			},
 			want: "info message",
 		},
 		{
-			name:        "warn",
-			configLevel: "warn",
+			name:        levelWarn,
+			configLevel: levelWarn,
 			log: func(logger *Logger) {
 				logger.Warn("warn message")
 			},
 			want: "warn message",
 		},
 		{
-			name:        "error",
-			configLevel: "error",
+			name:        levelError,
+			configLevel: levelError,
 			log: func(logger *Logger) {
 				logger.Error("error message")
 			},
