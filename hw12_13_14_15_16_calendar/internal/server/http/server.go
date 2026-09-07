@@ -63,7 +63,11 @@ func (s *Server) Start(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 
-		if err := s.Stop(context.Background()); err != nil {
+		//nolint:gosec // shutdown must use a fresh context because the parent context is already canceled.
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := s.Stop(shutdownCtx); err != nil {
 			s.logger.Error("failed to stop http server: " + err.Error())
 		}
 	}()

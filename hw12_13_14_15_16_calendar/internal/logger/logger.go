@@ -5,6 +5,13 @@ import (
 	"os"
 )
 
+const (
+	levelDebug = "debug"
+	levelInfo  = "info"
+	levelWarn  = "warn"
+	levelError = "error"
+)
+
 type Logger struct {
 	logger *slog.Logger
 }
@@ -13,13 +20,13 @@ func New(level string) *Logger {
 	var logLevel slog.Level
 
 	switch level {
-	case "debug":
+	case levelDebug:
 		logLevel = slog.LevelDebug
-	case "info":
+	case levelInfo:
 		logLevel = slog.LevelInfo
-	case "warn":
+	case levelWarn:
 		logLevel = slog.LevelWarn
-	case "error":
+	case levelError:
 		logLevel = slog.LevelError
 	default:
 		logLevel = slog.LevelInfo

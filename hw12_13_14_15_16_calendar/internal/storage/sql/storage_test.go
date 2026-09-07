@@ -9,6 +9,8 @@ import (
 	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/storage"
 )
 
+const testDatabase = "postgres"
+
 func TestStorage_CreateEvent(t *testing.T) {
 	s := newTestStorage(t)
 	ctx := context.Background()
@@ -312,9 +314,9 @@ func newTestStorage(t *testing.T) *Storage {
 	s := New(Config{
 		Host:     "localhost",
 		Port:     5432,
-		Database: "postgres",
-		Username: "postgres",
-		Password: "postgres",
+		Database: testDatabase,
+		Username: testDatabase,
+		Password: testDatabase,
 	})
 
 	if err := s.Connect(context.Background()); err != nil {
@@ -325,7 +327,7 @@ func newTestStorage(t *testing.T) *Storage {
 		_ = s.Close(context.Background())
 	})
 
-	if _, err := s.db.Exec(`DELETE FROM events`); err != nil {
+	if _, err := s.db.ExecContext(context.Background(), `DELETE FROM events`); err != nil {
 		t.Fatalf("cleanup events error = %v", err)
 	}
 
