@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/storage"
 )
 
@@ -34,8 +35,16 @@ func New(logger Logger, storage Storage) *App {
 	}
 }
 
-func (a *App) CreateEvent(ctx context.Context, event storage.Event) error {
-	return a.storage.CreateEvent(ctx, event)
+func (a *App) CreateEvent(ctx context.Context, event storage.Event) (storage.Event, error) {
+	if event.ID == "" {
+		event.ID = uuid.NewString()
+	}
+
+	if err := a.storage.CreateEvent(ctx, event); err != nil {
+		return storage.Event{}, err
+	}
+
+	return event, nil
 }
 
 func (a *App) UpdateEvent(ctx context.Context, event storage.Event) error {
