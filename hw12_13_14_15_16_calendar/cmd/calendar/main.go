@@ -11,6 +11,7 @@ import (
 
 	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/app"
 	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/logger"
+	internalgrpc "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/storage/sql"
@@ -76,33 +77,60 @@ func main() {
 
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(
+	httpServer := internalhttp.NewServer(
 		logg,
 		calendar,
 		internalhttp.Config{
 			Host: config.HTTP.Host,
 			Port: config.HTTP.Port,
-		})
+		},
+	)
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	grpcServer := internalgrpc.NewServer(
+		logg,
+		calendar,
+		internalgrpc.Config{
+			Host: config.GRPC.Host,
+			Port: config.GRPC.Port,
+		},
+	)
+
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGHUP,
+	)
 	defer cancel()
 
 	go func() {
 		<-ctx.Done()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
+		shutdownCtx, shutdownCancel := context.WithTimeout(
+			context.Background(),
+			3*time.Second,
+		)
+		defer shutdownCancel()
 
-		if err := server.Stop(ctx); err != nil {
+		if err := httpServer.Stop(shutdownCtx); err != nil {
 			logg.Error("failed to stop http server: " + err.Error())
 		}
 	}()
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
+	errCh := make(chan error, 2)
+
+	go func() {
+		errCh <- httpServer.Start(ctx)
+	}()
+
+	go func() {
+		errCh <- grpcServer.Start(ctx)
+	}()
+
+	if err := <-errCh; err != nil {
+		logg.Error("server stopped with error: " + err.Error())
 		cancel()
 		os.Exit(1) //nolint:gocritic
 	}

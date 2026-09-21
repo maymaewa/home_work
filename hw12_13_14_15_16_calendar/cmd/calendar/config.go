@@ -10,6 +10,7 @@ type Config struct {
 	Logger  LoggerConf
 	Storage StorageConf
 	HTTP    HTTPConf
+	GRPC    GRPCConf
 }
 
 type LoggerConf struct {
@@ -30,6 +31,11 @@ type SQLConf struct {
 }
 
 type HTTPConf struct {
+	Host string
+	Port int
+}
+
+type GRPCConf struct {
 	Host string
 	Port int
 }
