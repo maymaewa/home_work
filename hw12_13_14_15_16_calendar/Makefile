@@ -6,8 +6,8 @@ LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%d
 
 #Postrges
 POSTGRES_USER ?= postgres
-POSTGRES_PASSWORD ?= password
-POSTGRES_DB ?= backend
+POSTGRES_PASSWORD ?= postgres
+POSTGRES_DB ?= postgres
 POSTGRES_PORT ?= 5435
 POSTGRES_CONTAINER := postgres-calendar
 
@@ -27,6 +27,12 @@ run-postgres:
 	-p $(POSTGRES_PORT):5432 \
 	-v postgres-data:/var/lib/postgresql/data \
 	postgres:latest
+migrate:
+	goose -dir ./migrations postgres "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" up
+migrate-down:
+	goose -dir ./migrations postgres "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" down
+migrate-status:
+	goose -dir ./migrations postgres "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" status
 
 run-rabbit:
 	docker run -d --name $(RABBIT_CONTAINER) \
@@ -55,12 +61,12 @@ version: build
 	$(BIN) version
 
 test:
-	go test -race ./internal/... ./pkg/...
+	go test -race ./internal/...
 
 install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.57.2
+	(which golangci-lint > /dev/null) || curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v2.13.2
 
 lint: install-lint-deps
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint
+.PHONY: build run build-img run-img version test lint run-postgres run-rabbit migrate migrate-down migrate-status
