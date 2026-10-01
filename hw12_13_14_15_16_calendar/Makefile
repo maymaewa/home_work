@@ -69,4 +69,7 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint run-postgres run-rabbit migrate migrate-down migrate-status
+.PHONY: build run build-img run-img version test lint generate run-postgres run-rabbit migrate migrate-down migrate-status
+
+generate:
+	go generate ./...

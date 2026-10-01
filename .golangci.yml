@@ -37,6 +37,11 @@ linters:
           allow:
             - $gostd
             - github.com/stretchr/testify
+    tagliatelle:
+      case:
+        use-field-name: false
+        rules:
+          json: snake
 
   enable:
     - asciicheck

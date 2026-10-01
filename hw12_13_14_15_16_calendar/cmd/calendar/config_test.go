@@ -12,8 +12,12 @@ func TestNewConfig(t *testing.T) {
 		t.Errorf("Logger.Level = %q, want %q", config.Logger.Level, "debug")
 	}
 
-	if config.Storage.Type != "memory" {
-		t.Errorf("Storage.Type = %q, want %q", config.Storage.Type, "memory")
+	if config.Storage.Type != "sql" {
+		t.Errorf("Storage.Type = %q, want %q", config.Storage.Type, "sql")
+	}
+
+	if config.Storage.SQL.Database != "postgres" {
+		t.Errorf("SQL.Database = %q, want %q", config.Storage.SQL.Database, "postgres")
 	}
 
 	if config.HTTP.Host != "127.0.0.1" {
@@ -30,9 +34,5 @@ func TestNewConfig(t *testing.T) {
 
 	if config.Storage.SQL.Port != 5432 {
 		t.Errorf("SQL.Port = %d, want %d", config.Storage.SQL.Port, 5432)
-	}
-
-	if config.Storage.SQL.Database != "calendar" {
-		t.Errorf("SQL.Database = %q, want %q", config.Storage.SQL.Database, "calendar")
 	}
 }

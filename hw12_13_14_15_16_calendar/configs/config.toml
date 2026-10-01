@@ -14,3 +14,7 @@ port = 5432
 database = "postgres"
 username = "postgres"
 password = "postgres"
+
+[grpc]
+host = "127.0.0.1"
+port = 50051
