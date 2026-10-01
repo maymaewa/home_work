@@ -182,39 +182,8 @@ func (s *Storage) listEvents(
 	if err != nil {
 		return nil, fmt.Errorf("list events: %w", err)
 	}
-	defer rows.Close()
 
-	events := make([]storage.Event, 0)
-
-	for rows.Next() {
-		var event storage.Event
-		var notifyBefore sql.NullInt64
-
-		if err := rows.Scan(
-			&event.ID,
-			&event.Title,
-			&event.StartAt,
-			&event.EndAt,
-			&event.Description,
-			&event.UserID,
-			&notifyBefore,
-		); err != nil {
-			return nil, fmt.Errorf("scan event: %w", err)
-		}
-
-		if notifyBefore.Valid {
-			duration := time.Duration(notifyBefore.Int64)
-			event.NotifyBefore = &duration
-		}
-
-		events = append(events, event)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate events: %w", err)
-	}
-
-	return events, nil
+	return scanEvents(rows)
 }
 
 func (s *Storage) ListEventsForDay(ctx context.Context, date time.Time) ([]storage.Event, error) {
@@ -296,4 +265,87 @@ func mapDBError(err error) error {
 	}
 
 	return err
+}
+
+func (s *Storage) ListEventsForNotification(
+	ctx context.Context,
+	from time.Time,
+	to time.Time,
+) ([]storage.Event, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT
+			id,
+			title,
+			start_at,
+			end_at,
+			description,
+			user_id,
+			notify_before
+		FROM events
+		WHERE notify_before IS NOT NULL
+		  AND start_at - make_interval(
+				secs => notify_before::double precision / 1000000000
+		  ) >= $1
+		  AND start_at - make_interval(
+				secs => notify_before::double precision / 1000000000
+		  ) < $2
+		  AND start_at > $2
+		ORDER BY start_at
+	`, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("list events for notification: %w", err)
+	}
+
+	return scanEvents(rows)
+}
+
+func (s *Storage) DeleteEventsOlderThan(
+	ctx context.Context,
+	before time.Time,
+) error {
+	_, err := s.db.ExecContext(ctx, `
+		DELETE FROM events
+		WHERE start_at < $1
+	`, before)
+	if err != nil {
+		return fmt.Errorf("delete old events: %w", err)
+	}
+
+	return nil
+}
+
+func scanEvents(rows *sql.Rows) ([]storage.Event, error) {
+	defer rows.Close()
+
+	events := make([]storage.Event, 0)
+
+	for rows.Next() {
+		var event storage.Event
+		var notifyBefore sql.NullInt64
+
+		if err := rows.Scan(
+			&event.ID,
+			&event.Title,
+			&event.StartAt,
+			&event.EndAt,
+			&event.Description,
+			&event.UserID,
+			&notifyBefore,
+		); err != nil {
+			return nil, fmt.Errorf("scan event: %w", err)
+		}
+
+		if notifyBefore.Valid {
+			duration := time.Duration(notifyBefore.Int64)
+			event.NotifyBefore = &duration
+		}
+
+		events = append(events, event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate events: %w", err)
+	}
+
+	return events, nil
 }

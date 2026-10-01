@@ -18,3 +18,13 @@ password = "postgres"
 [grpc]
 host = "127.0.0.1"
 port = 50051
+
+[rabbit]
+host = "localhost"
+port = 5672
+username = "rabbit"
+password = "password"
+queue = "calendar.notifications"
+
+[scheduler]
+interval = "1m"

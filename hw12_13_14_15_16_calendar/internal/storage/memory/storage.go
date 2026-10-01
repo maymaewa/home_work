@@ -2,6 +2,7 @@ package memorystorage
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"time"
 
@@ -144,4 +145,63 @@ func startOfMonth(t time.Time) time.Time {
 	return time.Date(
 		t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location(),
 	)
+}
+
+func (s *Storage) ListEventsForNotification(
+	ctx context.Context,
+	from time.Time,
+	to time.Time,
+) ([]storage.Event, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]storage.Event, 0)
+
+	for _, event := range s.events {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		if event.NotifyBefore == nil {
+			continue
+		}
+
+		notificationTime := event.StartAt.Add(-*event.NotifyBefore)
+
+		if notificationTime.Before(from) || !notificationTime.Before(to) {
+			continue
+		}
+
+		if !event.StartAt.After(to) {
+			continue
+		}
+
+		result = append(result, event)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].StartAt.Before(result[j].StartAt)
+	})
+
+	return result, nil
+}
+
+func (s *Storage) DeleteEventsOlderThan(
+	ctx context.Context,
+	before time.Time,
+) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for id, event := range s.events {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		if event.StartAt.Before(before) {
+			delete(s.events, id)
+		}
+	}
+
+	return nil
 }
