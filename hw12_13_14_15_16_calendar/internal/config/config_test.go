@@ -1,9 +1,9 @@
-package main
+package config
 
 import "testing"
 
 func TestNewConfig(t *testing.T) {
-	config, err := NewConfig("../../configs/config.toml")
+	config, err := New("../../configs/config.toml")
 	if err != nil {
 		t.Fatalf("NewConfig() error = %v", err)
 	}

@@ -26,6 +26,9 @@ type Storage interface {
 	ListEventsForDay(ctx context.Context, date time.Time) ([]storage.Event, error)
 	ListEventsForWeek(ctx context.Context, date time.Time) ([]storage.Event, error)
 	ListEventsForMonth(ctx context.Context, date time.Time) ([]storage.Event, error)
+
+	ListEventsForNotification(ctx context.Context, from time.Time, to time.Time) ([]storage.Event, error)
+	DeleteEventsOlderThan(ctx context.Context, before time.Time) error
 }
 
 func New(logger Logger, storage Storage) *App {
@@ -65,4 +68,19 @@ func (a *App) ListEventsForWeek(ctx context.Context, date time.Time) ([]storage.
 
 func (a *App) ListEventsForMonth(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	return a.storage.ListEventsForMonth(ctx, date)
+}
+
+func (a *App) ListEventsForNotification(
+	ctx context.Context,
+	from time.Time,
+	to time.Time,
+) ([]storage.Event, error) {
+	return a.storage.ListEventsForNotification(ctx, from, to)
+}
+
+func (a *App) DeleteEventsOlderThan(
+	ctx context.Context,
+	before time.Time,
+) error {
+	return a.storage.DeleteEventsOlderThan(ctx, before)
 }

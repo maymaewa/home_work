@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/app"
+	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/config"
 	"github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/logger"
 	internalgrpc "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/maymaewa/home_work/hw12_13_14_15_calendar/internal/server/http"
@@ -31,28 +32,28 @@ func main() {
 		return
 	}
 
-	config, err := NewConfig(configFile)
+	cfg, err := config.New(configFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 		os.Exit(1)
 	}
 
-	logg := logger.New(config.Logger.Level)
+	logg := logger.New(cfg.Logger.Level)
 
 	var storage app.Storage
 	var sqlStore *sqlstorage.Storage
 
-	switch config.Storage.Type {
+	switch cfg.Storage.Type {
 	case "memory":
 		storage = memorystorage.New()
 
 	case "sql":
 		sqlStore = sqlstorage.New(sqlstorage.Config{
-			Host:     config.Storage.SQL.Host,
-			Port:     config.Storage.SQL.Port,
-			Database: config.Storage.SQL.Database,
-			Username: config.Storage.SQL.Username,
-			Password: config.Storage.SQL.Password,
+			Host:     cfg.Storage.SQL.Host,
+			Port:     cfg.Storage.SQL.Port,
+			Database: cfg.Storage.SQL.Database,
+			Username: cfg.Storage.SQL.Username,
+			Password: cfg.Storage.SQL.Password,
 		})
 
 		if err := sqlStore.Connect(context.Background()); err != nil {
@@ -63,7 +64,7 @@ func main() {
 		storage = sqlStore
 
 	default:
-		logg.Error("unknown storage type: " + config.Storage.Type)
+		logg.Error("unknown storage type: " + cfg.Storage.Type)
 		os.Exit(1)
 	}
 
@@ -81,8 +82,8 @@ func main() {
 		logg,
 		calendar,
 		internalhttp.Config{
-			Host: config.HTTP.Host,
-			Port: config.HTTP.Port,
+			Host: cfg.HTTP.Host,
+			Port: cfg.HTTP.Port,
 		},
 	)
 
@@ -90,8 +91,8 @@ func main() {
 		logg,
 		calendar,
 		internalgrpc.Config{
-			Host: config.GRPC.Host,
-			Port: config.GRPC.Port,
+			Host: cfg.GRPC.Host,
+			Port: cfg.GRPC.Port,
 		},
 	)
 

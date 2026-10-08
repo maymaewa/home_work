@@ -1,16 +1,19 @@
-package main
+package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
-	Logger  LoggerConf
-	Storage StorageConf
-	HTTP    HTTPConf
-	GRPC    GRPCConf
+	Logger    LoggerConf
+	Storage   StorageConf
+	HTTP      HTTPConf
+	GRPC      GRPCConf
+	Rabbit    RabbitConf
+	Scheduler SchedulerConf
 }
 
 type LoggerConf struct {
@@ -40,7 +43,19 @@ type GRPCConf struct {
 	Port int
 }
 
-func NewConfig(path string) (Config, error) {
+type RabbitConf struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	Queue    string
+}
+
+type SchedulerConf struct {
+	Interval time.Duration
+}
+
+func New(path string) (Config, error) {
 	var config Config
 
 	if _, err := toml.DecodeFile(path, &config); err != nil {
