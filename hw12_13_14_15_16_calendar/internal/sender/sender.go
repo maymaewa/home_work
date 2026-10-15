@@ -15,14 +15,16 @@ type Logger interface {
 }
 
 type Sender struct {
-	consumer queue.Consumer
-	logger   Logger
+	consumer  queue.Consumer
+	publisher queue.Publisher
+	logger    Logger
 }
 
-func New(consumer queue.Consumer, logger Logger) *Sender {
+func New(consumer queue.Consumer, publisher queue.Publisher, logger Logger) *Sender {
 	return &Sender{
-		consumer: consumer,
-		logger:   logger,
+		consumer:  consumer,
+		publisher: publisher,
+		logger:    logger,
 	}
 }
 
@@ -50,21 +52,35 @@ func (s *Sender) Start(ctx context.Context) error {
 }
 
 func (s *Sender) process(message queue.Message) error {
-	var notification notification.Notification
+	var notif notification.Notification
 
-	if err := json.Unmarshal(message.Body, &notification); err != nil {
+	if err := json.Unmarshal(message.Body, &notif); err != nil {
 		return fmt.Errorf("unmarshal notification: %w", err)
 	}
 
-	s.logger.Info(
-		fmt.Sprintf(
-			"notification: event_id=%s title=%q date=%s user_id=%s",
-			notification.EventID,
-			notification.Title,
-			notification.Date.Format("2006-01-02 15:04:05"),
-			notification.UserID,
-		),
-	)
+	s.logger.Info(fmt.Sprintf(
+		"notification: event_id=%s title=%q date=%s user_id=%s",
+		notif.EventID,
+		notif.Title,
+		notif.Date.Format("2006-01-02 15:04:05"),
+		notif.UserID,
+	))
+
+	status := notification.Status{
+		EventID: notif.EventID,
+		Status:  "sent",
+	}
+
+	body, err := json.Marshal(status)
+	if err != nil {
+		return fmt.Errorf("marshal notification status: %w", err)
+	}
+
+	if err := s.publisher.Publish(context.Background(), queue.Message{
+		Body: body,
+	}); err != nil {
+		return fmt.Errorf("publish notification status: %w", err)
+	}
 
 	return nil
 }

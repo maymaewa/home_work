@@ -44,11 +44,12 @@ type GRPCConf struct {
 }
 
 type RabbitConf struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	Queue    string
+	Host        string `toml:"host"`
+	Port        int    `toml:"port"`
+	Username    string `toml:"username"`
+	Password    string `toml:"password"`
+	Queue       string `toml:"queue"`
+	StatusQueue string `toml:"status_queue"`
 }
 
 type SchedulerConf struct {

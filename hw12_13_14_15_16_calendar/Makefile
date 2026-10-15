@@ -5,7 +5,7 @@ SENDER_BIN := "$(BIN_DIR)/calendar_sender"
 
 DOCKER_IMG="calendar:develop"
 
-GIT_HASH := $(shell git log --format="%h" -n 1)
+GIT_HASH := $(shell git rev-parse --short HEAD)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
 #Postrges
@@ -77,7 +77,27 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint generate run-postgres run-rabbit migrate migrate-down migrate-status
+.PHONY: build run build-img run-img version test lint generate \
+	run-postgres run-rabbit migrate migrate-down migrate-status \
+	up down integration-tests
 
 generate:
 	go generate ./...
+
+COMPOSE_FILE := ./deployments/docker-compose.yaml
+INTEGRATION_COMPOSE_FILE := ./deployments/docker-compose.integration.yaml
+
+up:
+	docker compose -f $(COMPOSE_FILE) up -d
+
+down:
+	docker compose -f $(COMPOSE_FILE) down
+
+integration-tests:
+	docker compose -f $(INTEGRATION_COMPOSE_FILE) up -d --build
+	@while [ "$$(docker inspect -f '{{.State.Status}}' $$(docker compose -f $(INTEGRATION_COMPOSE_FILE) ps -q integration-tests))" != "exited" ]; do \
+		sleep 1; \
+	done
+	@code=$$(docker inspect -f '{{.State.ExitCode}}' $$(docker compose -f $(INTEGRATION_COMPOSE_FILE) ps -q integration-tests)); \
+	docker compose -f $(INTEGRATION_COMPOSE_FILE) down -v; \
+	exit $$code

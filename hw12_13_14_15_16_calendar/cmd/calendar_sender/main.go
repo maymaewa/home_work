@@ -28,10 +28,16 @@ func init() {
 func main() {
 	flag.Parse()
 
-	cfg, err := config.New(configFile)
-	if err != nil {
+	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 		os.Exit(1)
+	}
+}
+
+func run() error {
+	cfg, err := config.New(configFile)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	logg := logger.New(cfg.Logger.Level)
@@ -44,8 +50,7 @@ func main() {
 		Queue:    cfg.Rabbit.Queue,
 	})
 	if err != nil {
-		logg.Error("failed to connect to rabbitmq: " + err.Error())
-		os.Exit(1)
+		return fmt.Errorf("failed to connect to rabbitmq: %w", err)
 	}
 
 	defer func() {
@@ -54,7 +59,24 @@ func main() {
 		}
 	}()
 
-	s := sender.New(rabbit, logg)
+	statusRabbit, err := rabbitmq.New(rabbitmq.Config{
+		Host:     cfg.Rabbit.Host,
+		Port:     cfg.Rabbit.Port,
+		Username: cfg.Rabbit.Username,
+		Password: cfg.Rabbit.Password,
+		Queue:    cfg.Rabbit.StatusQueue,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to connect to rabbitmq status queue: %w", err)
+	}
+
+	defer func() {
+		if err := statusRabbit.Close(); err != nil {
+			logg.Error("failed to close rabbitmq status queue: " + err.Error())
+		}
+	}()
+
+	s := sender.New(rabbit, statusRabbit, logg)
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -67,6 +89,8 @@ func main() {
 	logg.Info("calendar sender is running...")
 
 	if err := s.Start(ctx); err != nil {
-		logg.Error("scheduler stopped with error: " + err.Error())
+		return fmt.Errorf("calendar sender stopped with error: %w", err)
 	}
+
+	return nil
 }

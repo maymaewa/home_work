@@ -25,6 +25,7 @@ port = 5672
 username = "rabbit"
 password = "password"
 queue = "calendar.notifications"
+status_queue = "calendar.notification.status"
 
 [scheduler]
 interval = "1m"
