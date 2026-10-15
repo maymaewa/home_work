@@ -82,11 +82,5 @@ func (s *Sender) process(message queue.Message) error {
 		return fmt.Errorf("publish notification status: %w", err)
 	}
 
-	s.logger.Info(fmt.Sprintf(
-		"notification status published: event_id=%s status=%s",
-		status.EventID,
-		status.Status,
-	))
-
 	return nil
 }
